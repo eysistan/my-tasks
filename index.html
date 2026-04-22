@@ -7,110 +7,135 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f0f2f5; }
-        .task-card { transition: all 0.3s ease; }
-        .task-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .loading-shimmer { background: linear-gradient(90deg, #eff1f3 25%, #e2e2e2 50%, #eff1f3 75%); background-size: 400% 100%; animation: shimmer 2s infinite; }
-        @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+        body { font-family: 'Kanit', sans-serif; background-color: #f4f7f9; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .task-item { transition: transform 0.2s; }
+        .task-item:hover { transform: scale(1.02); }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="min-h-screen p-4 md:p-10">
 
-    <div class="max-w-4xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 bg-white p-6 rounded-2xl shadow-sm">
-            <div>
-                <h1 class="text-3xl font-bold text-blue-600">Warm Wanichphan</h1>
-                <p class="text-gray-500">จัดการรายการงานบนระบบ Cloud</p>
+    <div class="max-w-5xl mx-auto">
+        <div class="glass-card rounded-3xl p-6 mb-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-3xl shadow-inner">👨‍💻</div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Warm Wanichphan</h1>
+                    <p class="text-sm text-blue-500 font-light">โน้ตประจำวัน: ท้องฟ้าวันนี้สดใส.. สู้ๆ นะคะ ☁️✨</p>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="loadTasks()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-xl transition flex items-center gap-2">
-                    <span>🔄</span> ดึงข้อมูล
+            <div class="flex gap-3">
+                <button onclick="fetchTasks()" class="bg-white border border-gray-200 hover:bg-gray-50 px-6 py-2.5 rounded-2xl shadow-sm transition flex items-center gap-2 font-medium text-gray-700">
+                    🔄 ดึงข้อมูล
                 </button>
-                <button onclick="openModal()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl transition flex items-center gap-2">
-                    <span>+</span> เพิ่มงานใหม่
+                <button onclick="toggleModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl shadow-lg shadow-blue-200 transition flex items-center gap-2 font-medium">
+                    + เพิ่มงานใหม่
                 </button>
             </div>
         </div>
 
-        <div id="taskList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="col-span-full text-center py-10 text-gray-400">กดปุ่ม "ดึงข้อมูล" เพื่อเริ่มต้น</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-50">
+                <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">งานทั้งหมด</p>
+                <span id="totalCount" class="text-2xl font-bold text-gray-700">0</span>
+            </div>
+            <div class="bg-blue-50 p-4 rounded-2xl shadow-sm border border-blue-100">
+                <p class="text-xs text-blue-400 uppercase tracking-wider mb-1 text-center">กำลังทำ / รอตรวจ</p>
+                <span id="pendingCount" class="text-2xl font-bold text-blue-600">0</span>
+            </div>
+            <div class="bg-green-50 p-4 rounded-2xl shadow-sm border border-green-100">
+                <p class="text-xs text-green-400 uppercase tracking-wider mb-1">เสร็จแล้ว</p>
+                <span id="successCount" class="text-2xl font-bold text-green-600">0</span>
+            </div>
+            <div class="bg-red-50 p-4 rounded-2xl shadow-sm border border-red-100">
+                <p class="text-xs text-red-400 uppercase tracking-wider mb-1">เกินกำหนด!</p>
+                <span class="text-2xl font-bold text-red-600">0</span>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-3xl overflow-hidden shadow-sm">
+            <div id="taskList" class="divide-y divide-gray-100">
+                <div class="p-20 text-center text-gray-400">
+                    <p>ยังไม่มีข้อมูลบน Cloud หรือการเชื่อมต่อขัดข้อง</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="taskModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h2 class="text-xl font-bold mb-4 text-gray-800">📝 เพิ่มรายการงานใหม่</h2>
+    <div id="modal" class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">📝 เพิ่มรายการใหม่</h3>
             <div class="space-y-4">
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">หัวข้อรายการ</label>
-                    <input type="text" id="taskTitle" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">สถานะ</label>
-                    <select id="taskStatus" class="w-full border rounded-lg px-4 py-2">
-                        <option value="กำลังทำ">กำลังทำ</option>
-                        <option value="เสร็จแล้ว">เสร็จแล้ว</option>
-                        <option value="รอดำเนินการ">รอดำเนินการ</option>
-                    </select>
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button onclick="addTask()" id="submitBtn" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">บันทึกข้อมูล</button>
-                    <button onclick="closeModal()" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg hover:bg-gray-200">ยกเลิก</button>
+                <input type="text" id="inputTitle" placeholder="หัวข้องานที่ต้องทำ..." class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none">
+                <select id="inputStatus" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 outline-none">
+                    <option value="กำลังทำ">กำลังทำ</option>
+                    <option value="เสร็จแล้ว">เสร็จแล้ว</option>
+                    <option value="รอดำเนินการ">รอดำเนินการ</option>
+                </select>
+                <div class="flex gap-3 mt-4">
+                    <button onclick="addTask()" id="saveBtn" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium">บันทึก</button>
+                    <button onclick="toggleModal()" class="flex-1 bg-gray-100 text-gray-500 py-3 rounded-xl font-medium">ยกเลิก</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // URL ของคุณที่แก้ปัญหา CORS แล้ว
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWMY90_trbXdafnlRtXHr8RgUjl9Rg4ezGukCPWZjL7USoyIaK_u_pQPOsT1PWYPcD/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzWMY90_trbXdafnlRtXHr8RgUjl9Rg4ezGukCPWZjL7USoyIaK_u_pQPOsT1PWYPcD/exec";
 
-        // ฟังก์ชันดึงข้อมูล
-        async function loadTasks() {
-            const container = document.getElementById('taskList');
-            container.innerHTML = '<div class="col-span-full py-10 text-center">กำลังดึงข้อมูลจาก Cloud...</div>';
-
+        async function fetchTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '<div class="p-20 text-center">🔄 กำลังดึงข้อมูล...</div>';
+            
             try {
-                const response = await fetch(SCRIPT_URL);
+                const response = await fetch(API_URL);
                 const result = await response.json();
-
+                
                 if (result.status === "success") {
-                    displayTasks(result.data);
+                    renderTasks(result.data);
                 } else {
-                    alert("เกิดข้อผิดพลาด: " + result.message);
+                    alert("Error: " + result.message);
                 }
             } catch (error) {
-                console.error(error);
-                alert("ไม่สามารถเชื่อมต่อ Cloud ได้ (ตรวจสอบการ Deploy หรือ CORS)");
+                alert("เชื่อมต่อ Cloud ไม่ได้ กรุณาเช็คการ Deploy เป็น Anyone");
             }
         }
 
-        // ฟังก์ชันแสดงผลข้อมูล
-        function displayTasks(tasks) {
-            const container = document.getElementById('taskList');
-            if (tasks.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400">ยังไม่มีข้อมูลในระบบ</div>';
+        function renderTasks(tasks) {
+            const list = document.getElementById('taskList');
+            const total = document.getElementById('totalCount');
+            const pending = document.getElementById('pendingCount');
+            const success = document.getElementById('successCount');
+
+            if (!tasks || tasks.length === 0) {
+                list.innerHTML = '<div class="p-20 text-center text-gray-400">ไม่มีข้อมูลในขณะนี้</div>';
                 return;
             }
 
-            container.innerHTML = tasks.map(task => `
-                <div class="task-card bg-white p-5 rounded-2xl shadow-sm border-l-4 ${task.status === 'เสร็จแล้ว' ? 'border-green-500' : 'border-blue-500'}">
-                    <div class="flex justify-between items-start">
-                        <h3 class="font-medium text-lg text-gray-800">${task.title || 'ไม่มีหัวข้อ'}</h3>
-                        <span class="text-xs px-2 py-1 rounded-full ${task.status === 'เสร็จแล้ว' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}">
-                            ${task.status || 'รอดำเนินการ'}
-                        </span>
+            total.innerText = tasks.length;
+            pending.innerText = tasks.filter(t => t.status !== 'เสร็จแล้ว').length;
+            success.innerText = tasks.filter(t => t.status === 'เสร็จแล้ว').length;
+
+            list.innerHTML = tasks.map(task => `
+                <div class="task-item p-5 flex items-center justify-between hover:bg-gray-50/50">
+                    <div class="flex items-center gap-4">
+                        <div class="w-2 h-2 rounded-full ${task.status === 'เสร็จแล้ว' ? 'bg-green-400' : 'bg-blue-400'}"></div>
+                        <div>
+                            <p class="font-medium text-gray-700">${task.title || 'ไม่มีชื่อ'}</p>
+                            <p class="text-xs text-gray-400 italic">ID: ${task.id || '-'}</p>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-400 mt-2">ID: ${task.id || '-'}</p>
+                    <span class="text-sm px-4 py-1 rounded-full ${task.status === 'เสร็จแล้ว' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}">
+                        ${task.status || 'กำลังทำ'}
+                    </span>
                 </div>
             `).join('');
         }
 
-        // ฟังก์ชันเพิ่มข้อมูล
         async function addTask() {
-            const title = document.getElementById('taskTitle').value;
-            const status = document.getElementById('taskStatus').value;
-            const btn = document.getElementById('submitBtn');
+            const title = document.getElementById('inputTitle').value;
+            const status = document.getElementById('inputStatus').value;
+            const btn = document.getElementById('saveBtn');
 
             if (!title) return alert("กรุณากรอกหัวข้อ");
 
@@ -118,32 +143,31 @@
             btn.innerText = "กำลังบันทึก...";
 
             try {
-                // สร้างข้อมูลจำลอง (คุณสามารถปรับหัวข้อให้ตรงกับชื่อ Column ใน Sheet ได้)
-                const payload = {
-                    id: Date.now().toString().slice(-4),
-                    title: title,
-                    status: status
-                };
-
-                await fetch(SCRIPT_URL, {
-                    method: "POST",
-                    body: JSON.stringify(payload)
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        id: Math.floor(Math.random() * 1000).toString(),
+                        title: title,
+                        status: status
+                    })
                 });
-
-                alert("บันทึกสำเร็จ!");
-                closeModal();
-                loadTasks(); // รีโหลดข้อมูลใหม่
+                toggleModal();
+                fetchTasks();
             } catch (error) {
-                alert("บันทึกไม่สำเร็จ ลองเช็คสิทธิ์การเข้าถึงใน Google Script");
+                alert("บันทึกไม่สำเร็จ");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "บันทึกข้อมูล";
+                btn.innerText = "บันทึก";
             }
         }
 
-        // ฟังก์ชันจัดการ Modal
-        function openModal() { document.getElementById('taskModal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('taskModal').classList.add('hidden'); }
+        function toggleModal() {
+            document.getElementById('modal').classList.toggle('hidden');
+            document.getElementById('inputTitle').value = "";
+        }
+
+        // เริ่มต้นโหลดข้อมูล
+        window.onload = fetchTasks;
     </script>
 </body>
 </html>
