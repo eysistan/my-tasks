@@ -78,7 +78,7 @@
                 </div>
             </div>
             <div class="flex gap-3">
-                <button onclick="loadFromCloud()" class="bg-white border-2 border-blue-200 text-blue-400 px-6 py-5 rounded-[2rem] font-bold text-lg flex items-center gap-3 transition-all hover:bg-blue-50">
+                <button id="btnLoad" onclick="loadFromCloud()" class="bg-white border-2 border-blue-200 text-blue-400 px-6 py-5 rounded-[2rem] font-bold text-lg flex items-center gap-3 transition-all hover:bg-blue-50">
                     <i class="fas fa-cloud-download-alt"></i> ดึงข้อมูล
                 </button>
                 <button onclick="openModal()" class="cinna-gradient text-white px-10 py-5 rounded-[2rem] font-bold text-lg flex items-center gap-3 transition-all hover:scale-105">
@@ -188,45 +188,50 @@
 
     <script>
         // --- ส่วนเชื่อมต่อ Google Drive ---
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5MD9NAvVaWFghNvR_EAeAADqBN2Z6DHIEuxi8PMDaex63nExWf_couSKtOTxNR3cl/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwDRr0wO-yDW88DjNf5eOvYO4YGBSmqdJdxrLhr27iEx33LKHXHD0csC7fWeqd4TZo/exec';
 
         let tasks = JSON.parse(localStorage.getItem('tasks_v10')) || [];
         let todayTasks = JSON.parse(localStorage.getItem('today_tasks_v10')) || [];
         let viewDate = new Date();
         let topBarChart;
 
+        // แก้ไขฟังก์ชัน Sync ให้ส่งข้อมูลแบบ Form Data (เสถียรกว่า JSON ดิบ)
         async function syncToCloud() {
             try {
-                const payload = {
-                    tasks: JSON.stringify(tasks),
-                    todayTasks: JSON.stringify(todayTasks)
-                };
-                // ใช้ fetch ส่งข้อมูลไปที่ Apps Script
+                const formData = new URLSearchParams();
+                formData.append('tasks', JSON.stringify(tasks));
+                formData.append('todayTasks', JSON.stringify(todayTasks));
+
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(payload)
+                    body: formData,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                 });
                 console.log("Synced to Cloud ☁️");
             } catch (e) { console.error("Sync failed", e); }
         }
 
+        // แก้ไขฟังก์ชัน Load ให้รองรับการ Error Handling และตรวจสอบสิทธิ์
         async function loadFromCloud() {
-            const btn = event.target;
+            const btn = document.getElementById('btnLoad');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังดึง...';
             
             try {
                 const response = await fetch(SCRIPT_URL);
+                if (!response.ok) throw new Error('Network error');
+                
                 const data = await response.json();
                 if(data && data.tasks) {
                     tasks = JSON.parse(data.tasks);
                     todayTasks = JSON.parse(data.todayTasks || "[]");
-                    updateUI(false); // อัปเดต UI โดยไม่ต้องสั่ง sync ซ้ำ
+                    updateUI(false); 
                     alert('ดึงข้อมูลล่าสุดจาก Cloud เรียบร้อยแล้วค่ะ! ☁️✨');
+                } else {
+                    alert('ยังไม่มีข้อมูลบันทึกอยู่ใน Cloud ค่ะ');
                 }
             } catch (e) { 
-                alert('ไม่พบข้อมูลบน Cloud หรือการเชื่อมต่อขัดข้อง');
+                alert('ไม่พบข้อมูลบน Cloud หรือการเชื่อมต่อขัดข้อง (กรุณาเช็คการ Deploy ใน Apps Script ว่าเลือกเป็น Anyone หรือยัง)');
                 console.error(e);
             } finally {
                 btn.innerHTML = originalText;
@@ -260,11 +265,9 @@
 
             renderTopChart(done, pending, overdue);
             
-            // Save to Local
             localStorage.setItem('tasks_v10', JSON.stringify(tasks));
             localStorage.setItem('today_tasks_v10', JSON.stringify(todayTasks));
 
-            // Auto-Sync to Cloud
             if(shouldSync) syncToCloud();
         }
 
@@ -411,6 +414,8 @@
         function openModal() { document.getElementById('taskModal').classList.remove('hidden'); }
         function closeModal() { document.getElementById('taskModal').classList.add('hidden'); document.getElementById('editIndex').value = ""; }
         function changeMonth(s) { viewDate.setMonth(viewDate.getMonth() + s); renderCalendar(); }
+        
+        // Profile Info Saving
         function saveProfileInfo() { localStorage.setItem('c_name_v10', document.getElementById('userName').value); }
         function saveUserNote() { localStorage.setItem('c_note_v10', document.getElementById('userNote').value); }
         function saveTodayTableName() { localStorage.setItem('c_today_name_v10', document.getElementById('todayTableName').value); }
@@ -420,13 +425,14 @@
             r.readAsDataURL(e.target.files[0]);
         }
 
+        // Initialize Data from Local
         const sn = localStorage.getItem('c_name_v10'), st = localStorage.getItem('c_note_v10'), si = localStorage.getItem('c_img_v10'), tn = localStorage.getItem('c_today_name_v10');
         if(sn) document.getElementById('userName').value = sn;
         if(st) document.getElementById('userNote').value = st;
         if(si) document.getElementById('profilePreview').src = si;
         if(tn) document.getElementById('todayTableName').value = tn;
         
-        updateUI(false); // เริ่มต้นไม่ต้อง sync ทันที
+        updateUI(false); 
     </script>
 </body>
 </html>
