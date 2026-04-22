@@ -131,12 +131,7 @@
                 <table class="w-full text-left">
                     <thead class="bg-blue-50/10 text-[10px] font-bold text-blue-300 uppercase tracking-widest">
                         <tr>
-                            <th class="p-6">ภารกิจ</th>
-                            <th class="p-6 text-center">เริ่มงาน</th>
-                            <th class="p-6 text-center">Deadline</th>
-                            <th class="p-6 text-center">เหลืออีก (วัน)</th>
-                            <th class="p-6 text-center">สถานะ</th>
-                            <th class="p-6 text-right"></th>
+                            <th class="p-6">ภารกิจ</th><th class="p-6 text-center">เริ่มงาน</th><th class="p-6 text-center">Deadline</th><th class="p-6 text-center">เหลืออีก (วัน)</th><th class="p-6 text-center">สถานะ</th><th class="p-6 text-right"></th>
                         </tr>
                     </thead>
                     <tbody id="todayTableBody" class="divide-y divide-blue-50"></tbody>
@@ -146,20 +141,13 @@
 
         <div class="glass-card overflow-hidden mb-10">
             <div class="p-8 border-b border-blue-50 bg-white/30">
-                <h3 class="font-bold text-slate-600 flex items-center gap-2">
-                    <i class="fas fa-database text-blue-300"></i> รายการภารกิจทั้งหมด
-                </h3>
+                <h3 class="font-bold text-slate-600 flex items-center gap-2"><i class="fas fa-database text-blue-300"></i> รายการภารกิจทั้งหมด</h3>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
                     <thead class="bg-blue-50/20 text-[10px] font-bold text-blue-400 uppercase tracking-widest">
                         <tr>
-                            <th class="p-6">ภารกิจ</th>
-                            <th class="p-6 text-center">เริ่มงาน</th>
-                            <th class="p-6 text-center">Deadline</th>
-                            <th class="p-6 text-center">เหลืออีก (วัน)</th>
-                            <th class="p-6 text-center">สถานะ</th>
-                            <th class="p-6 text-right"></th>
+                            <th class="p-6">ภารกิจ</th><th class="p-6 text-center">เริ่มงาน</th><th class="p-6 text-center">Deadline</th><th class="p-6 text-center">เหลืออีก (วัน)</th><th class="p-6 text-center">สถานะ</th><th class="p-6 text-right"></th>
                         </tr>
                     </thead>
                     <tbody id="taskTableBody" class="divide-y divide-blue-50"></tbody>
@@ -187,60 +175,44 @@
     </div>
 
     <script>
-        // --- ส่วนเชื่อมต่อ Google Drive ---
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwDRr0wO-yDW88DjNf5eOvYO4YGBSmqdJdxrLhr27iEx33LKHXHD0csC7fWeqd4TZo/exec';
+        // --- NEW SCRIPT URL ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzEd4Od_FPGCqMU_ezDxV4wYV6HFSE8pMaadv5BsZvRi1Im5WkMa5QI1nFkQa3Jisud/exec';
 
         let tasks = JSON.parse(localStorage.getItem('tasks_v10')) || [];
         let todayTasks = JSON.parse(localStorage.getItem('today_tasks_v10')) || [];
         let viewDate = new Date();
         let topBarChart;
 
-        // แก้ไขฟังก์ชัน Sync ให้ส่งข้อมูลแบบ Form Data (เสถียรกว่า JSON ดิบ)
         async function syncToCloud() {
             try {
                 const formData = new URLSearchParams();
                 formData.append('tasks', JSON.stringify(tasks));
                 formData.append('todayTasks', JSON.stringify(todayTasks));
-
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                });
+                await fetch(SCRIPT_URL, { method: 'POST', body: formData });
                 console.log("Synced to Cloud ☁️");
             } catch (e) { console.error("Sync failed", e); }
         }
 
-        // แก้ไขฟังก์ชัน Load ให้รองรับการ Error Handling และตรวจสอบสิทธิ์
         async function loadFromCloud() {
             const btn = document.getElementById('btnLoad');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังดึง...';
-            
             try {
                 const response = await fetch(SCRIPT_URL);
-                if (!response.ok) throw new Error('Network error');
-                
                 const data = await response.json();
                 if(data && data.tasks) {
                     tasks = JSON.parse(data.tasks);
                     todayTasks = JSON.parse(data.todayTasks || "[]");
                     updateUI(false); 
-                    alert('ดึงข้อมูลล่าสุดจาก Cloud เรียบร้อยแล้วค่ะ! ☁️✨');
-                } else {
-                    alert('ยังไม่มีข้อมูลบันทึกอยู่ใน Cloud ค่ะ');
-                }
+                    alert('ดึงข้อมูลล่าสุดเรียบร้อยแล้วค่ะ! ☁️✨');
+                } else { alert('ยังไม่มีข้อมูลบน Cloud ค่ะ'); }
             } catch (e) { 
-                alert('ไม่พบข้อมูลบน Cloud หรือการเชื่อมต่อขัดข้อง (กรุณาเช็คการ Deploy ใน Apps Script ว่าเลือกเป็น Anyone หรือยัง)');
+                alert('การเชื่อมต่อขัดข้อง หรือยังไม่ได้ Deploy เป็น Anyone');
                 console.error(e);
-            } finally {
-                btn.innerHTML = originalText;
-            }
+            } finally { btn.innerHTML = originalText; }
         }
 
-        // --- ระบบจัดการ Task เดิม ---
         function formatDate(d) { if(!d) return "-"; const [y,m,day] = d.split('-'); return `${day}-${m}-${y}`; }
-        
         function getDaysLeft(dl) {
             if(!dl) return "-";
             const today = new Date(); today.setHours(0,0,0,0);
@@ -250,24 +222,17 @@
         }
 
         function updateUI(shouldSync = true) {
-            renderTaskTable();
-            renderTodayTable();
-            renderCalendar();
-            
+            renderTaskTable(); renderTodayTable(); renderCalendar();
             const done = tasks.filter(t => t.status === 'เสร็จแล้ว').length;
-            const pending = tasks.filter(t => t.status === 'กำลังดำเนินการ' || t.status === 'รอตรวจ').length;
+            const pending = tasks.filter(t => t.status !== 'เสร็จแล้ว').length;
             const overdue = tasks.filter(t => getDaysLeft(t.deadline) === "เลยกำหนด" && t.status !== 'เสร็จแล้ว').length;
-
             document.getElementById('statTotal').innerText = tasks.length;
             document.getElementById('statPending').innerText = pending;
             document.getElementById('statDone').innerText = done;
             document.getElementById('statOverdue').innerText = overdue;
-
             renderTopChart(done, pending, overdue);
-            
             localStorage.setItem('tasks_v10', JSON.stringify(tasks));
             localStorage.setItem('today_tasks_v10', JSON.stringify(todayTasks));
-
             if(shouldSync) syncToCloud();
         }
 
@@ -275,37 +240,30 @@
             const tbody = document.getElementById('taskTableBody');
             tbody.innerHTML = tasks.map((t, i) => `
                 <tr class="hover:bg-blue-50/40">
-                    <td class="p-6">
-                        <div class="flex flex-col"><span class="font-bold text-slate-600 ${t.status==='เสร็จแล้ว'?'line-through text-slate-300':''}">${t.title}</span><span class="text-[9px] font-bold text-blue-300 uppercase">${t.priority}</span></div>
-                    </td>
+                    <td class="p-6"><div class="flex flex-col"><span class="font-bold text-slate-600 ${t.status==='เสร็จแล้ว'?'line-through text-slate-300':''}">${t.title}</span><span class="text-[9px] font-bold text-blue-300 uppercase">${t.priority}</span></div></td>
                     <td class="p-6 text-center text-xs text-slate-400">${formatDate(t.startDate)}</td>
                     <td class="p-6 text-center text-xs font-bold text-blue-400">${formatDate(t.deadline)}</td>
                     <td class="p-6 text-center font-extrabold ${getDaysLeft(t.deadline)==='เลยกำหนด'?'text-red-400':'text-blue-500'}">${getDaysLeft(t.deadline)}</td>
                     <td class="p-6 text-center">
                         <select onchange="updateStatus(${i}, this.value, 'main')" class="bg-blue-50 text-[11px] font-bold rounded-full px-4 py-2 outline-none mx-auto block">
-                            <option value="กำลังดำเนินการ" ${t.status==='กำลังดำเนินการ'?'selected':''}>⏳ กำลังดำเนินการ</option>
+                            <option value="กำลังดำเนินการ" ${t.status==='กำลังดำเนินการ'?'selected':''}>⏳ กำลังทำ</option>
                             <option value="รอตรวจ" ${t.status==='รอตรวจ'?'selected':''}>🧐 รอตรวจ</option>
-                            <option value="เสร็จแล้ว" ${t.status==='เสร็จแล้ว'?'selected':''}>☁️ เสร็จสมบูรณ์</option>
+                            <option value="เสร็จแล้ว" ${t.status==='เสร็จแล้ว'?'selected':''}>☁️ เสร็จแล้ว</option>
                         </select>
                     </td>
-                    <td class="p-6 text-right">
-                        <div class="flex gap-4 justify-end items-center">
-                            <button onclick="copyToToday(${i})" class="text-blue-400 hover:text-blue-600 text-xs font-bold bg-blue-50 px-3 py-1 rounded-full"><i class="fas fa-sun"></i> ทำวันนี้</button>
-                            <button onclick="editTask(${i})" class="text-blue-200 hover:text-blue-500"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteTask(${i}, 'main')" class="text-slate-100 hover:text-red-300"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+                    <td class="p-6 text-right"><div class="flex gap-4 justify-end items-center">
+                        <button onclick="copyToToday(${i})" class="text-blue-400 hover:text-blue-600 text-xs font-bold bg-blue-50 px-3 py-1 rounded-full"><i class="fas fa-sun"></i> วันนี้</button>
+                        <button onclick="editTask(${i})" class="text-blue-200 hover:text-blue-500"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteTask(${i}, 'main')" class="text-slate-100 hover:text-red-300"><i class="fas fa-trash-alt"></i></button>
+                    </div></td>
+                </tr>`).join('');
         }
 
         function renderTodayTable() {
             const tbody = document.getElementById('todayTableBody');
             tbody.innerHTML = todayTasks.map((t, i) => `
                 <tr class="bg-blue-50/5 hover:bg-blue-50/20">
-                    <td class="p-6">
-                        <div class="flex flex-col"><span class="font-bold text-slate-600">${t.title}</span><span class="text-[9px] font-bold text-blue-300 uppercase">${t.priority}</span></div>
-                    </td>
+                    <td class="p-6"><div class="flex flex-col"><span class="font-bold text-slate-600">${t.title}</span><span class="text-[9px] font-bold text-blue-300 uppercase">${t.priority}</span></div></td>
                     <td class="p-6 text-center text-xs text-slate-400">${formatDate(t.startDate)}</td>
                     <td class="p-6 text-center text-xs font-bold text-blue-400">${formatDate(t.deadline)}</td>
                     <td class="p-6 text-center font-extrabold ${getDaysLeft(t.deadline)==='เลยกำหนด'?'text-red-400':'text-blue-500'}">${getDaysLeft(t.deadline)}</td>
@@ -316,43 +274,20 @@
                             <option value="เสร็จแล้ว" ${t.status==='เสร็จแล้ว'?'selected':''}>☁️ เสร็จแล้ว</option>
                         </select>
                     </td>
-                    <td class="p-6 text-right">
-                        <button onclick="deleteTask(${i}, 'today')" class="text-slate-200 hover:text-red-300"><i class="fas fa-times-circle"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+                    <td class="p-6 text-right"><button onclick="deleteTask(${i}, 'today')" class="text-slate-200 hover:text-red-300"><i class="fas fa-times-circle"></i></button></td>
+                </tr>`).join('');
         }
 
-        function copyToToday(i) {
-            const newTask = {...tasks[i]};
-            todayTasks.push(newTask);
-            updateUI();
-        }
-
-        function updateStatus(i, val, type) {
-            if(type === 'main') tasks[i].status = val;
-            else todayTasks[i].status = val;
-            updateUI();
-        }
-
-        function deleteTask(i, type) {
-            if(!confirm('ลบรายการนี้ใช่ไหม?')) return;
-            if(type === 'main') tasks.splice(i, 1);
-            else todayTasks.splice(i, 1);
-            updateUI();
-        }
-
+        function copyToToday(i) { todayTasks.push({...tasks[i]}); updateUI(); }
+        function updateStatus(i, val, type) { if(type === 'main') tasks[i].status = val; else todayTasks[i].status = val; updateUI(); }
+        function deleteTask(i, type) { if(!confirm('ลบรายการนี้ใช่ไหม?')) return; if(type === 'main') tasks.splice(i, 1); else todayTasks.splice(i, 1); updateUI(); }
+        function openModal() { document.getElementById('taskModal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('taskModal').classList.add('hidden'); document.getElementById('editIndex').value = ""; }
         function saveTask() {
             const title = document.getElementById('taskTitle').value;
             if(!title) return alert('ใส่ชื่อภารกิจก่อนน้า');
             const idx = document.getElementById('editIndex').value;
-            const obj = {
-                title,
-                startDate: document.getElementById('taskStartDate').value,
-                deadline: document.getElementById('taskDeadline').value,
-                priority: document.getElementById('taskPriority').value,
-                status: idx===""?'กำลังดำเนินการ':tasks[idx].status
-            };
+            const obj = { title, startDate: document.getElementById('taskStartDate').value, deadline: document.getElementById('taskDeadline').value, priority: document.getElementById('taskPriority').value, status: idx===""?'กำลังดำเนินการ':tasks[idx].status };
             if(idx==="") tasks.push(obj); else tasks[idx] = obj;
             updateUI(); closeModal();
         }
@@ -360,16 +295,10 @@
         function renderTopChart(done, pending, overdue) {
             const ctx = document.getElementById('topBarChart').getContext('2d');
             if (topBarChart) topBarChart.destroy();
-            Chart.defaults.font.family = 'Kanit';
             topBarChart = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: ['เสร็จแล้ว 🌸', 'กำลังทำ/รอ ☁️', 'เกินกำหนด 🔥'],
-                    datasets: [{ data: [done, pending, overdue], backgroundColor: ['#ffdeeb', '#a5d8ff', '#ffc9c9'], borderRadius: 12, barThickness: 35 }]
-                },
-                options: { maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } },
-                    scales: { x: { grid: { display: false }, ticks: { stepSize: 1 } }, y: { grid: { display: false }, ticks: { font: { weight: '600' } } } }
-                }
+                data: { labels: ['เสร็จแล้ว 🌸', 'กำลังทำ ☁️', 'เกินกำหนด 🔥'], datasets: [{ data: [done, pending, overdue], backgroundColor: ['#ffdeeb', '#a5d8ff', '#ffc9c9'], borderRadius: 12, barThickness: 35 }] },
+                options: { maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }
             });
         }
 
@@ -387,16 +316,10 @@
                 let cls = "day-node text-slate-200 ";
                 let tipItems = "";
                 if(daily.length > 0) {
-                    const hasOverdue = daily.some(t => getDaysLeft(t.deadline) === "เลยกำหนด" && t.status !== 'เสร็จแล้ว');
+                    const hasOver = daily.some(t => getDaysLeft(t.deadline)==="เลยกำหนด" && t.status!=='เสร็จแล้ว');
                     const allDone = daily.every(t => t.status === 'เสร็จแล้ว');
-                    if (hasOverdue) cls += "day-overdue";
-                    else if (allDone) cls += "day-done";
-                    else cls += "day-pending";
-                    tipItems = daily.map(t => {
-                        const isOver = getDaysLeft(t.deadline) === "เลยกำหนด" && t.status !== 'เสร็จแล้ว';
-                        const colorClass = t.status === 'เสร็จแล้ว' ? 'text-pink-400' : (isOver ? 'text-red-500 font-bold' : 'text-blue-400');
-                        return `<span class="tooltip-item ${colorClass}">${isOver ? '🔥 ' : ''}${t.title}</span>`;
-                    }).join('');
+                    if (hasOver) cls += "day-overdue"; else if (allDone) cls += "day-done"; else cls += "day-pending";
+                    tipItems = daily.map(t => `<span class="tooltip-item">${t.title}</span>`).join('');
                 }
                 grid.innerHTML += `<div class="${cls}">${d}<div class="tooltip">${tipItems || 'ไม่มีงาน'}</div></div>`;
             }
@@ -411,11 +334,7 @@
             openModal();
         }
 
-        function openModal() { document.getElementById('taskModal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('taskModal').classList.add('hidden'); document.getElementById('editIndex').value = ""; }
         function changeMonth(s) { viewDate.setMonth(viewDate.getMonth() + s); renderCalendar(); }
-        
-        // Profile Info Saving
         function saveProfileInfo() { localStorage.setItem('c_name_v10', document.getElementById('userName').value); }
         function saveUserNote() { localStorage.setItem('c_note_v10', document.getElementById('userNote').value); }
         function saveTodayTableName() { localStorage.setItem('c_today_name_v10', document.getElementById('todayTableName').value); }
@@ -425,13 +344,11 @@
             r.readAsDataURL(e.target.files[0]);
         }
 
-        // Initialize Data from Local
         const sn = localStorage.getItem('c_name_v10'), st = localStorage.getItem('c_note_v10'), si = localStorage.getItem('c_img_v10'), tn = localStorage.getItem('c_today_name_v10');
         if(sn) document.getElementById('userName').value = sn;
         if(st) document.getElementById('userNote').value = st;
         if(si) document.getElementById('profilePreview').src = si;
         if(tn) document.getElementById('todayTableName').value = tn;
-        
         updateUI(false); 
     </script>
 </body>
