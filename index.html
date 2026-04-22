@@ -9,165 +9,86 @@
     <style>
         body { font-family: 'Kanit', sans-serif; background-color: #f4f7f9; }
         .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
-        .task-item { transition: transform 0.2s; }
-        .task-item:hover { transform: scale(1.02); }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-10">
+<body class="p-4 md:p-8">
 
-    <div class="max-w-5xl mx-auto">
-        <div class="glass-card rounded-3xl p-6 mb-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
             <div class="flex items-center gap-4">
-                <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-3xl shadow-inner">👨‍💻</div>
+                <div class="w-12 h-12 bg-gray-200 rounded-xl"></div>
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Warm Wanichphan</h1>
-                    <p class="text-sm text-blue-500 font-light">โน้ตประจำวัน: ท้องฟ้าวันนี้สดใส.. สู้ๆ นะคะ ☁️✨</p>
+                    <h1 class="text-xl font-bold text-blue-800">Warm Wanichphan</h1>
+                    <p class="text-xs text-gray-400">โน้ตประจำวัน: ท้องฟ้าวันนี้สดใส.. สู้ๆ นะคะ ☁️✨</p>
                 </div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="fetchTasks()" class="bg-white border border-gray-200 hover:bg-gray-50 px-6 py-2.5 rounded-2xl shadow-sm transition flex items-center gap-2 font-medium text-gray-700">
-                    🔄 ดึงข้อมูล
-                </button>
-                <button onclick="toggleModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl shadow-lg shadow-blue-200 transition flex items-center gap-2 font-medium">
-                    + เพิ่มงานใหม่
-                </button>
+            <div class="flex gap-2">
+                <button onclick="fetchData()" class="bg-blue-100 text-blue-600 px-4 py-2 rounded-xl text-sm">🔄 กำลังดึง...</button>
+                <button onclick="openModal()" class="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm">+ เพิ่มงานใหม่</button>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-50">
-                <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">งานทั้งหมด</p>
-                <span id="totalCount" class="text-2xl font-bold text-gray-700">0</span>
+        <div class="grid grid-cols-4 gap-4 mb-8">
+            <div class="bg-gray-100 p-4 rounded-2xl text-center">
+                <p class="text-xs text-gray-500">งานทั้งหมด</p>
+                <span id="total" class="text-xl font-bold">0</span>
             </div>
-            <div class="bg-blue-50 p-4 rounded-2xl shadow-sm border border-blue-100">
-                <p class="text-xs text-blue-400 uppercase tracking-wider mb-1 text-center">กำลังทำ / รอตรวจ</p>
-                <span id="pendingCount" class="text-2xl font-bold text-blue-600">0</span>
+            <div class="bg-blue-50 p-4 rounded-2xl text-center">
+                <p class="text-xs text-blue-500">กำลังทำ / รอตรวจ</p>
+                <span id="pending" class="text-xl font-bold">0</span>
             </div>
-            <div class="bg-green-50 p-4 rounded-2xl shadow-sm border border-green-100">
-                <p class="text-xs text-green-400 uppercase tracking-wider mb-1">เสร็จแล้ว</p>
-                <span id="successCount" class="text-2xl font-bold text-green-600">0</span>
+            <div class="bg-pink-50 p-4 rounded-2xl text-center">
+                <p class="text-xs text-pink-500">เสร็จแล้ว</p>
+                <span id="completed" class="text-xl font-bold">0</span>
             </div>
-            <div class="bg-red-50 p-4 rounded-2xl shadow-sm border border-red-100">
-                <p class="text-xs text-red-400 uppercase tracking-wider mb-1">เกินกำหนด!</p>
-                <span class="text-2xl font-bold text-red-600">0</span>
+            <div class="bg-red-50 p-4 rounded-2xl text-center">
+                <p class="text-xs text-red-500">เกินกำหนด!</p>
+                <span class="text-xl font-bold">0</span>
             </div>
         </div>
 
-        <div class="glass-card rounded-3xl overflow-hidden shadow-sm">
-            <div id="taskList" class="divide-y divide-gray-100">
-                <div class="p-20 text-center text-gray-400">
-                    <p>ยังไม่มีข้อมูลบน Cloud หรือการเชื่อมต่อขัดข้อง</p>
-                </div>
+        <div id="taskContainer" class="grid grid-cols-1 gap-4">
             </div>
-        </div>
-    </div>
-
-    <div id="modal" class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
-            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">📝 เพิ่มรายการใหม่</h3>
-            <div class="space-y-4">
-                <input type="text" id="inputTitle" placeholder="หัวข้องานที่ต้องทำ..." class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none">
-                <select id="inputStatus" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 outline-none">
-                    <option value="กำลังทำ">กำลังทำ</option>
-                    <option value="เสร็จแล้ว">เสร็จแล้ว</option>
-                    <option value="รอดำเนินการ">รอดำเนินการ</option>
-                </select>
-                <div class="flex gap-3 mt-4">
-                    <button onclick="addTask()" id="saveBtn" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium">บันทึก</button>
-                    <button onclick="toggleModal()" class="flex-1 bg-gray-100 text-gray-500 py-3 rounded-xl font-medium">ยกเลิก</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
+        // ใช้ URL ล่าสุดของคุณ
         const API_URL = "https://script.google.com/macros/s/AKfycbzWMY90_trbXdafnlRtXHr8RgUjl9Rg4ezGukCPWZjL7USoyIaK_u_pQPOsT1PWYPcD/exec";
 
-        async function fetchTasks() {
-            const list = document.getElementById('taskList');
-            list.innerHTML = '<div class="p-20 text-center">🔄 กำลังดึงข้อมูล...</div>';
-            
+        async function fetchData() {
             try {
                 const response = await fetch(API_URL);
                 const result = await response.json();
-                
                 if (result.status === "success") {
-                    renderTasks(result.data);
-                } else {
-                    alert("Error: " + result.message);
+                    updateUI(result.data);
                 }
             } catch (error) {
-                alert("เชื่อมต่อ Cloud ไม่ได้ กรุณาเช็คการ Deploy เป็น Anyone");
+                console.error("เชื่อมต่อผิดพลาด", error);
+                alert("ไม่พบข้อมูลบน Cloud (ตรวจสอบการ Deploy ใน Apps Script ว่าเลือกเป็น Anyone หรือยัง)");
             }
         }
 
-        function renderTasks(tasks) {
-            const list = document.getElementById('taskList');
-            const total = document.getElementById('totalCount');
-            const pending = document.getElementById('pendingCount');
-            const success = document.getElementById('successCount');
+        function updateUI(tasks) {
+            const container = document.getElementById('taskContainer');
+            document.getElementById('total').innerText = tasks.length;
+            document.getElementById('pending').innerText = tasks.filter(t => t.status !== 'เสร็จแล้ว').length;
+            document.getElementById('completed').innerText = tasks.filter(t => t.status === 'เสร็จแล้ว').length;
 
-            if (!tasks || tasks.length === 0) {
-                list.innerHTML = '<div class="p-20 text-center text-gray-400">ไม่มีข้อมูลในขณะนี้</div>';
-                return;
-            }
-
-            total.innerText = tasks.length;
-            pending.innerText = tasks.filter(t => t.status !== 'เสร็จแล้ว').length;
-            success.innerText = tasks.filter(t => t.status === 'เสร็จแล้ว').length;
-
-            list.innerHTML = tasks.map(task => `
-                <div class="task-item p-5 flex items-center justify-between hover:bg-gray-50/50">
-                    <div class="flex items-center gap-4">
-                        <div class="w-2 h-2 rounded-full ${task.status === 'เสร็จแล้ว' ? 'bg-green-400' : 'bg-blue-400'}"></div>
-                        <div>
-                            <p class="font-medium text-gray-700">${task.title || 'ไม่มีชื่อ'}</p>
-                            <p class="text-xs text-gray-400 italic">ID: ${task.id || '-'}</p>
-                        </div>
+            container.innerHTML = tasks.map(task => `
+                <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
+                    <div>
+                        <p class="font-medium">${task.title || 'ไม่มีชื่อ'}</p>
+                        <p class="text-xs text-gray-400">ID: ${task.id || '-'}</p>
                     </div>
-                    <span class="text-sm px-4 py-1 rounded-full ${task.status === 'เสร็จแล้ว' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}">
+                    <span class="text-xs px-3 py-1 rounded-full ${task.status === 'เสร็จแล้ว' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}">
                         ${task.status || 'กำลังทำ'}
                     </span>
                 </div>
             `).join('');
         }
 
-        async function addTask() {
-            const title = document.getElementById('inputTitle').value;
-            const status = document.getElementById('inputStatus').value;
-            const btn = document.getElementById('saveBtn');
-
-            if (!title) return alert("กรุณากรอกหัวข้อ");
-
-            btn.disabled = true;
-            btn.innerText = "กำลังบันทึก...";
-
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        id: Math.floor(Math.random() * 1000).toString(),
-                        title: title,
-                        status: status
-                    })
-                });
-                toggleModal();
-                fetchTasks();
-            } catch (error) {
-                alert("บันทึกไม่สำเร็จ");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "บันทึก";
-            }
-        }
-
-        function toggleModal() {
-            document.getElementById('modal').classList.toggle('hidden');
-            document.getElementById('inputTitle').value = "";
-        }
-
-        // เริ่มต้นโหลดข้อมูล
-        window.onload = fetchTasks;
+        // โหลดข้อมูลทันทีที่เปิดหน้า
+        window.onload = fetchData;
     </script>
 </body>
 </html>
